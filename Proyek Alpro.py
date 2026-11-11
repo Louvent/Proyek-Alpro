@@ -12,3 +12,5 @@ def main():
         print("1. Mulai Permainan")
         print("2. Lihat Leaderboard")
         print("3. Keluar")
+
+print("hanif")
