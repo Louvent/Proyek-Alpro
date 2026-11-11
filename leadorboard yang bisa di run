@@ -1,0 +1,160 @@
+import json
+import os
+
+# Nama file lokal untuk menyimpan data leaderboard
+LEADERBOARD_FILE = "leaderboard.json"
+
+def load_leaderboard():
+    """Memuat data leaderboard dari file JSON."""
+    if not os.path.exists(LEADERBOARD_FILE):
+        return []
+    try:
+        with open(LEADERBOARD_FILE, "r") as file:
+            return json.load(file)
+    except json.JSONDecodeError:
+        return []
+
+def save_leaderboard(leaderboard):
+    """Menyimpan data leaderboard ke file JSON."""
+    with open(LEADERBOARD_FILE, "w") as file:
+        json.dump(leaderboard, file, indent=4)
+
+def update_leaderboard(player_name, attempts, level_name):
+    """Mengupdate atau menambahkan skor pemain ke leaderboard berdasarkan level."""
+    leaderboard = load_leaderboard()
+    
+    # Format data baru
+    new_entry = {
+        "name": player_name,
+        "attempts": attempts,
+        "level": level_name
+    }
+    
+    leaderboard.append(new_entry)
+
+    # Urutkan berdasarkan level (opsional) lalu percobaan paling sedikit
+    leaderboard.sort(key=lambda x: x["attempts"])
+    
+    # Batasi hanya 5 besar terbaik
+    leaderboard = leaderboard[:5]
+    save_leaderboard(leaderboard)
+    print(f"🎉 Selamat {player_name}, skor kamu berhasil disimpan ke leaderboard!")
+
+def display_leaderboard():
+    """Menampilkan daftar leaderboard ke layar."""
+    leaderboard = load_leaderboard()
+    print("\n==================================================")
+    print("            🏆 DAFTAR LEADERBOARD 🏆              ")
+    print("==================================================")
+    if not leaderboard:
+        print("Belum ada data di leaderboard. Jadilah yang pertama!")
+    else:
+        print(f"{'Peringkat':<10} {'Nama':<15} {'Level':<12} {'Percobaan':<10}")
+        print("-" * 50)
+        for idx, entry in enumerate(leaderboard, start=1):
+            print(f"{idx:<10} {entry['name']:<15} {entry['level']:<12} {entry['attempts']:<10}")
+    print("==================================================")
+
+def main_game():
+    """Logika utama permainan tebak angka dengan sistem Level & Nyawa."""
+    print("\n==========================================")
+    print("      🎮 PERMAINAN TEBAK ANGKA 🎮         ")
+    print("==========================================")
+    
+    # Pemilihan Level
+    print("Pilih Level Kesulitan:")
+    print("1. Mudah (Angka 1 - 50 | 7 Nyawa)")
+    print("2. Sedang (Angka 1 - 100 | 5 Nyawa)")
+    print("3. Sulit (Angka 1 - 200 | 4 Nyawa)")
+    
+    choice_lvl = input("Pilih level (1/2/3): ").strip()
+    if choice_lvl == '1':
+        max_num = 50
+        max_lives = 7
+        level_name = "Mudah"
+    elif choice_lvl == '3':
+        max_num = 200
+        max_lives = 4
+        level_name = "Sulit"
+    else:
+        max_num = 100
+        max_lives = 5
+        level_name = "Sedang"
+
+    # Input dari Player 1
+    print(f"\n[Giliran Player 1]")
+    secret_number = -1
+    while True:
+        try:
+            secret_number = int(input(f"Masukkan angka rahasia (1 - {max_num}): "))
+            if 1 <= secret_number <= max_num:
+                break
+            print(f"❌ Angka harus berada di antara 1 sampai {max_num}!")
+        except ValueError:
+            print("❌ Masukkan angka yang valid!")
+            
+    # Membersihkan layar konsol agar Player 2 tidak melihat angka rahasia
+    print("\n" * 50) 
+    print(f"🔒 Angka rahasia telah diset oleh Player 1! (Level: {level_name})")
+    
+    # Input dari Player 2
+    player_name = input("Masukkan nama Player 2 (Penebak): ").strip()
+    if not player_name:
+        player_name = "Anonymous"
+        
+    print(f"\n[Giliran Player 2 - {player_name}]")
+    print(f"Kamu punya {max_lives} nyawa untuk menebak angka dari 1 sampai {max_num}.")
+    
+    attempts = 0
+    lives = max_lives
+    
+    while lives > 0:
+        print(f"\n❤️ Sisa Nyawa: {lives}")
+        try:
+            guess = int(input("Tebakanmu: "))
+            attempts += 1
+            
+            if guess < secret_number:
+                print("📈 Terlalu kecil!")
+                lives -= 1
+            elif guess > secret_number:
+                print("📉 Terlalu besar!")
+                lives -= 1
+            else:
+                print(f"\n🎉 LUAR BIASA! Tebakan benar dalam {attempts} kali percobaan!")
+                update_leaderboard(player_name, attempts, level_name)
+                break
+        except ValueError:
+            print("❌ Masukkan angka yang valid!")
+            
+    if lives == 0:
+        print(f"\n💀 GAME OVER! Nyawa kamu habis. Angka rahasianya adalah {secret_number}.")
+        print("Sayang sekali, kamu gagal masuk leaderboard.")
+        
+    input("\nTekan Enter untuk kembali ke menu utama...")
+
+def main():
+    """Menu utama program."""
+    while True:
+        print("\n==========================================")
+        print("     🎯 GAME TEBAK ANGKA TERMINAL 🎯      ")
+        print("==========================================")
+        print("1. Mulai Permainan")
+        print("2. Lihat Leaderboard")
+        print("3. Keluar")
+        
+        choice = input("Pilih menu (1/3): ").strip()
+        
+        if choice == '1':
+            main_game()
+        elif choice == '2':
+            display_leaderboard()
+            input("\nTekan Enter untuk kembali ke menu utama...")
+        elif choice == '3':
+            print("\nTerima kasih sudah bermain! Sampai jumpa di GitHub!")
+            break
+        else:
+            print("❌ Pilihan tidak valid, silakan pilih 1, 2, atau 3.")
+
+if __name__ == "__main__":
+    main()
