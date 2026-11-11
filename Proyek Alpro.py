@@ -1,6 +1,82 @@
+import os
+
+LEADERBOARD_FILE = "leaderboard.txt"
+
+def load_leaderboard():
+    """Membaca data dari file teks leaderboard.txt."""
+    leaderboard = []
+    if not os.path.exists(LEADERBOARD_FILE):
+        return leaderboard
+        
+    try:
+        with open(LEADERBOARD_FILE, "r") as file:
+            for line in file:
+                line = line.strip()
+                if line:
+                    # Format baris di file: Nama,TotalPercobaan,Level
+                    parts = line.split(",")
+                    if len(parts) == 3:
+                        name, attempts, level = parts
+                        leaderboard.append({
+                            "name": name,
+                            "attempts": int(attempts),
+                            "level": level
+                        })
+    except Exception as e:
+        print(f"❌ Terjadi kesalahan saat membaca file: {e}")
+        
+    return leaderboard
+
+def save_leaderboard(leaderboard):
+    """Menyimpan kembali daftar leaderboard ke file teks."""
+    try:
+        with open(LEADERBOARD_FILE, "w") as file:
+            for entry in leaderboard:
+                line = f"{entry['name']},{entry['attempts']},{entry['level']}\n"
+                file.write(line)
+    except Exception as e:
+        print(f"❌ Terjadi kesalahan saat menyimpan file: {e}")
+
+def update_leaderboard(player_name, attempts, level_name):
+    """Menambahkan skor baru, mengurutkannya, dan membatasi 5 besar."""
+    leaderboard = load_leaderboard()
+    
+    # Masukkan data pemain yang baru menang
+    leaderboard.append({
+        "name": player_name,
+        "attempts": attempts,
+        "level": level_name
+    })
+    
+    # Urutkan berdasarkan jumlah percobaan paling sedikit (ascending)
+    leaderboard.sort(key=lambda x: x["attempts"])
+    
+    # Ambil 5 skor terbaik saja
+    leaderboard = leaderboard[:5]
+    
+    save_leaderboard(leaderboard)
+    print(f"🏆 Hebat! Skor {player_name} berhasil masuk leaderboard!")
+
+def display_leaderboard():
+    """Menampilkan tabel leaderboard ke terminal."""
+    leaderboard = load_leaderboard()
+    
+    print("\n==================================================")
+    print("                  🏆 DAFTAR LEADERBOARD 🏆               ")
+    print("==================================================")
+    if not leaderboard:
+        print("Belum ada data di leaderboard. Jadilah yang pertama!")
+    else:
+        print(f"{'Peringkat':<10} {'Nama Penebak':<15} {'Level':<12} {'Percobaan':<10}")
+        print("-" * 50)
+        for idx, entry in enumerate(leaderboard, start=1):
+            print(f"{idx:<10} {entry['name']:<15} {entry['level']:<12} {entry['attempts']:<10}")
+    print("==================================================")
+    input("\nTekan Enter untuk kembali ke menu utama...")
+
 def main_game():
     print("\n==========================================")
-    print("     🎮 PERMAINAN TEBAK ANGKA 🎮         ")
+    print("      🎮 PERMAINAN TEBAK ANGKA 🎮          ")
     print("==========================================")
 
     # 1. Pemilihan Level Kesulitan
@@ -9,7 +85,7 @@ def main_game():
     print("2. Sedang (Rentang 1 - 100, Nyawa: 6)")
     print("3. Sulit  (Rentang 1 - 200, Nyawa: 5)")
 
-    pilihan_level = input("\nPilih level (1-3): ")
+    pilihan_level = input("\Pilih level (1-3): ")
 
     if pilihan_level == "1":
         nama_level = "Mudah"
@@ -93,7 +169,11 @@ def main_game():
     if status_menang:
         print(f"🎉 SELAMAT {penebak.upper()}! Tebakan kamu BENAR!")
         print(f"Angka rahasianya memang: {angka_rahasia}")
-        print(f"Total Percobaan: {len(riwayat_tebakan)} kali")
+        total_percobaan = len(riwayat_tebakan)
+        print(f"Total Percobaan: {total_percobaan} kali")
+        
+        # Panggil fungsi update leaderboard jika pemain menang
+        update_leaderboard(penebak, total_percobaan, nama_level)
     else:
         print(f"💥 GAME OVER, {penebak}! Nyawa kamu sudah habis.")
         print(f"Angka rahasia yang dibuat {pembuat_angka} adalah: {angka_rahasia}")
@@ -104,7 +184,7 @@ def main_game():
 def main():
     while True:
         print("\n==========================================")
-        print("     🎯 GAME TEBAK ANGKA TERMINAL 🎯     ")
+        print("      🎯 GAME TEBAK ANGKA TERMINAL 🎯      ")
         print("==========================================")
         print("1. Mulai Permainan")
         print("2. Lihat Leaderboard")
@@ -115,7 +195,7 @@ def main():
             if pilih == 1:
                 main_game()
             elif pilih == 2:
-                ()
+                display_leaderboard()
             elif pilih == 3:
                 print("\nTerima kasih sudah bermain! Semangat Alpro-nya! ✨")
                 break
