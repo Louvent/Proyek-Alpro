@@ -1,0 +1,136 @@
+import json
+import os
+
+# Nama file lokal untuk menyimpan data leaderboard
+LEADERBOARD_FILE = "leaderboard.json"
+
+def load_leaderboard():
+    """Memuat data leaderboard dari file JSON."""
+    if not os.path.exists(LEADERBOARD_FILE):
+        return []
+    try:
+        with open(LEADERBOARD_FILE, "r") as file:
+            return json.load(file)
+    except json.JSONDecodeError:
+        return []
+
+def save_leaderboard(leaderboard):
+    """Menyimpan data leaderboard ke file JSON."""
+    with open(LEADERBOARD_FILE, "w") as file:
+        json.dump(leaderboard, file, indent=4)
+
+def update_leaderboard(player_name, attempts):
+    """Mengupdate atau menambahkan skor pemain ke leaderboard."""
+    leaderboard = load_leaderboard()
+    
+    # Cek apakah pemain sudah ada di leaderboard
+    player_found = False
+    for entry in leaderboard:
+        if entry["name"].lower() == player_name.lower():
+            player_found = True
+            if attempts < entry["attempts"]:
+                entry["attempts"] = attempts
+                print(f"🎉 Rekor baru untuk {player_name}!")
+            else:
+                print(f"Skor {attempts} percobaan tidak mengalahkan rekor terbaikmu ({entry['attempts']} percobaan).")
+            break
+            
+    if not player_found:
+        leaderboard.append({"name": player_name, "attempts": attempts})
+        print(f"Selamat {player_name}! Kamu berhasil masuk leaderboard!")
+
+    # Urutkan berdasarkan jumlah percobaan paling sedikit (ascending)
+    leaderboard.sort(key=lambda x: x["attempts"])
+    
+    # Batasi hanya 5 besar terbaik
+    leaderboard = leaderboard[:5]
+    save_leaderboard(leaderboard)
+
+def display_leaderboard():
+    """Menampilkan daftar leaderboard ke layar."""
+    leaderboard = load_leaderboard()
+    print("\n==========================================")
+    print("       🏆 DAFTAR LEADERBOARD 🏆       ")
+    print("==========================================")
+    if not leaderboard:
+        print("Belum ada data di leaderboard. Jadilah yang pertama!")
+    else:
+        print(f"{'Peringkat':<10} {'Nama Penebak':<15} {'Percobaan':<10}")
+        print("-" * 42)
+        for idx, entry in enumerate(leaderboard, start=1):
+            print(f"{idx:<10} {entry['name']:<15} {entry['attempts']:<10}")
+    print("==========================================")
+
+def main_game():
+    """Logika utama permainan tebak angka (2 Player)."""
+    print("\n==========================================")
+    print("      🎮 PERMAINAN TEBAK ANGKA 🎮         ")
+    print("==========================================")
+    
+    # Input dari Player 1
+    print("\n[Giliran Player 1]")
+    secret_number = -1
+    while True:
+        try:
+            secret_number = int(input("Masukkan angka rahasia (1 - 100): "))
+            if 1 <= secret_number <= 100:
+                break
+            print("❌ Angka harus berada di antara 1 sampai 100!")
+        except ValueError:
+            print("❌ Masukkan angka yang valid!")
+            
+    # Membersihkan layar konsol agar Player 2 tidak melihat angka rahasia
+    print("\n" * 50) 
+    print("🔒 Angka rahasia telah diset oleh Player 1!")
+    
+    # Input dari Player 2
+    player_name = input("Masukkan nama Player 2 (Penebak): ").strip()
+    if not player_name:
+        player_name = "Anonymous"
+        
+    print(f"\n[Giliran Player 2 - {player_name}]")
+    print("Silakan mulai menebak angka dari 1 sampai 100.")
+    
+    attempts = 0
+    while True:
+        try:
+            guess = int(input("Tebakanmu: "))
+            attempts += 1
+            
+            if guess < secret_number:
+                print("📈 Terlalu kecil! Coba lagi.")
+            elif guess > secret_number:
+                print("📉 Terlalu besar! Coba lagi.")
+            else:
+                print(f"\n🎉 LUAR BIASA! Tebakan benar dalam {attempts} kali percobaan!")
+                update_leaderboard(player_name, attempts)
+                input("\nTekan Enter untuk kembali ke menu utama...")
+                break
+        except ValueError:
+            print("❌ Masukkan angka yang valid!")
+
+def main():
+    """Menu utama program."""
+    while True:
+        print("\n==========================================")
+        print("     🎯 GAME TEBAK ANGKA TERMINAL 🎯      ")
+        print("==========================================")
+        print("1. Mulai Permainan")
+        print("2. Lihat Leaderboard")
+        print("3. Keluar")
+        
+        choice = input("Pilih menu (1/3): ").strip()
+        
+        if choice == '1':
+            main_game()
+        elif choice == '2':
+            display_leaderboard()
+            input("\nTekan Enter untuk kembali ke menu utama...")
+        elif choice == '3':
+            print("\nTerima kasih sudah bermain! Sampai jumpa di GitHub!")
+            break
+        else:
+            print("❌ Pilihan tidak valid, silakan pilih 1, 2, atau 3.")
+
+if __name__ == "__main__":
+    main()
